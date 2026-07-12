@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { PerspectiveCamera } from '@react-three/drei';
+import { PerspectiveCamera, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 import SceneCanvas from '@/components/SceneCanvas';
@@ -16,6 +16,8 @@ interface ArchElement {
 function GlassArchitecture() {
   const { position: cursorPos } = useCursorPosition();
   const groupRef = useRef<THREE.Group>(null);
+  const coreRef = useRef<THREE.Mesh>(null);
+  const haloRef = useRef<THREE.Mesh>(null);
   const timeRef = useRef(0);
   const elementsRef = useRef<ArchElement[]>([]);
 
@@ -26,11 +28,13 @@ function GlassArchitecture() {
     elementsRef.current = [];
 
     const glassMaterial = new THREE.MeshStandardMaterial({
-      color: '#ffffff',
+      color: '#aaddff',
       transparent: true,
-      opacity: 0.12,
-      metalness: 0.95,
-      roughness: 0.03,
+      opacity: 0.28,
+      metalness: 0.6,
+      roughness: 0.05,
+      emissive: '#2266ff',
+      emissiveIntensity: 0.6,
       envMapIntensity: 1,
       side: THREE.DoubleSide,
     });
@@ -38,13 +42,14 @@ function GlassArchitecture() {
     const edgeMaterial = new THREE.MeshStandardMaterial({
       color: '#88ccff',
       transparent: true,
-      opacity: 0.25,
-      metalness: 0.85,
+      opacity: 0.75,
+      metalness: 0.4,
       roughness: 0.1,
-      emissive: '#0088ff',
-      emissiveIntensity: 0.25,
+      emissive: '#00aaff',
+      emissiveIntensity: 1.6,
       side: THREE.DoubleSide,
     });
+    edgeMaterial.toneMapped = false;
 
     // Central sphere
     const sphereGeometry = new THREE.IcosahedronGeometry(3, 5);
@@ -134,28 +139,55 @@ function GlassArchitecture() {
       mesh.rotation.y += 0.00025;
       mesh.rotation.z += 0.0001;
 
-      // Pulsating glow
+      // Pulsating neon glow cycling through the spectrum
       const mat = mesh.material as THREE.MeshStandardMaterial;
       if (mat.emissive) {
-        const glow = Math.sin(timeRef.current * 0.7 + idx * 0.6) * 0.15 + 0.1;
-        const hue = (0.55 + idx * 0.05) % 1;
-        (mat.emissive as THREE.Color).setHSL(hue, 0.8, Math.max(0.02, glow));
-        mat.emissiveIntensity = Math.sin(timeRef.current * 0.8 + idx) * 0.2 + 0.2;
+        const glow = Math.sin(timeRef.current * 0.7 + idx * 0.6) * 0.2 + 0.55;
+        const hue = (0.5 + idx * 0.09 + timeRef.current * 0.02) % 1;
+        (mat.emissive as THREE.Color).setHSL(hue, 1, glow);
+        mat.emissiveIntensity = Math.sin(timeRef.current * 0.8 + idx) * 0.6 + 1.3;
       }
     });
+
+    // Pulse the blazing core
+    if (coreRef.current) {
+      const s = 1 + Math.sin(timeRef.current * 1.4) * 0.12;
+      coreRef.current.scale.setScalar(s);
+    }
+    if (haloRef.current) {
+      const s = 1 + Math.sin(timeRef.current * 1.4 + 0.6) * 0.18;
+      haloRef.current.scale.setScalar(s);
+    }
   });
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 8, 25]} fov={45} />
-      <ambientLight intensity={0.3} />
-      <pointLight position={[18, 18, 18]} intensity={0.7} color="#ffffff" />
-      <pointLight position={[-15, 12, -15]} intensity={0.5} color="#00ffdd" />
-      <pointLight position={[10, -12, 10]} intensity={0.3} color="#ff00ff" />
+      <ambientLight intensity={0.8} />
+      <pointLight position={[18, 18, 18]} intensity={600} color="#ffffff" />
+      <pointLight position={[-15, 12, -15]} intensity={500} color="#00ffdd" />
+      <pointLight position={[10, -12, 10]} intensity={400} color="#ff00ff" />
 
-      <group ref={groupRef} />
+      <group ref={groupRef}>
+        {/* Blazing core at the heart of the observatory */}
+        <mesh ref={coreRef}>
+          <icosahedronGeometry args={[1.4, 3]} />
+          <meshBasicMaterial color="#ff2fd6" toneMapped={false} />
+        </mesh>
+        <mesh ref={haloRef}>
+          <icosahedronGeometry args={[2.1, 3]} />
+          <meshBasicMaterial
+            color="#ff6ec7"
+            toneMapped={false}
+            transparent
+            opacity={0.3}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
 
-      <fog attach="fog" args={['#000000', 8, 80]} />
+      <Stars radius={90} depth={50} count={4000} factor={3.5} saturation={0.8} fade speed={0.8} />
     </>
   );
 }
@@ -168,7 +200,12 @@ export default function GlassObservatoryScene() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-black relative" role="region" aria-label="Glass Observatory Scene">
+    <div
+      className="w-full h-full relative"
+      style={{ background: 'radial-gradient(ellipse at 50% 40%, #0a2144 0%, #040a26 55%, #000000 100%)' }}
+      role="region"
+      aria-label="Glass Observatory Scene"
+    >
       {mounted && (
         <SceneCanvas>
           <GlassArchitecture />
@@ -177,7 +214,10 @@ export default function GlassObservatoryScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-5xl md:text-6xl font-light text-white tracking-widest text-center">
+        <h1
+          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
+          style={{ textShadow: '0 0 18px rgba(255,47,214,0.85), 0 0 60px rgba(0,170,255,0.6), 0 0 120px rgba(0,255,221,0.4)' }}
+        >
           YOU HAVE REACHED THE OTHER SIDE
         </h1>
         <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">

@@ -41,6 +41,17 @@ function GlitterField() {
         life: Math.random(),
       };
     });
+
+    // Iridescent neon instance colors
+    const palette = ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff', '#fffb96', '#00ffff'];
+    const c = new THREE.Color();
+    if (meshRef.current) {
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        c.set(palette[i % palette.length]);
+        meshRef.current.setColorAt(i, c);
+      }
+      if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+    }
   }, []);
 
   useFrame(() => {
@@ -89,7 +100,7 @@ function GlitterField() {
 
       // Update matrix
       temp.position.copy(particle.position);
-      const scale = 0.018 + Math.sin(timeRef.current * 2 + particle.life * 100) * 0.012;
+      const scale = 1.1 + Math.sin(timeRef.current * 2 + particle.life * 100) * 0.7;
       temp.scale.setScalar(scale);
       temp.rotation.z = Math.atan2(particle.velocity.y, particle.velocity.x) + timeRef.current;
 
@@ -103,23 +114,19 @@ function GlitterField() {
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={55} />
-      <pointLight position={[8, 8, 12]} intensity={0.8} color="#ffffff" />
-      <pointLight position={[-8, -8, 10]} intensity={0.5} color="#ff88dd" />
-      <ambientLight intensity={0.15} />
 
       <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
         <planeGeometry args={[0.04, 0.04]} />
-        <meshStandardMaterial
-          color="#d4c5b9"
-          emissive="#ffffee"
-          emissiveIntensity={0.5}
-          metalness={0.85}
-          roughness={0.08}
+        <meshBasicMaterial
+          color="#ffffff"
+          toneMapped={false}
+          transparent
+          opacity={0.95}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
           side={THREE.DoubleSide}
         />
       </instancedMesh>
-
-      <fog attach="fog" args={['#000000', 2, 60]} />
     </>
   );
 }
@@ -132,7 +139,12 @@ export default function GlitterFieldScene() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-black relative" role="region" aria-label="Glitter Field Scene">
+    <div
+      className="w-full h-full relative"
+      style={{ background: 'radial-gradient(ellipse at 50% 60%, #3d0a4d 0%, #12041f 55%, #000000 100%)' }}
+      role="region"
+      aria-label="Glitter Field Scene"
+    >
       {mounted && (
         <SceneCanvas>
           <GlitterField />
@@ -141,7 +153,10 @@ export default function GlitterFieldScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-5xl md:text-6xl font-light text-white tracking-widest text-center">
+        <h1
+          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
+          style={{ textShadow: '0 0 18px rgba(255,113,206,0.9), 0 0 60px rgba(185,103,255,0.6), 0 0 120px rgba(1,205,254,0.4)' }}
+        >
           TOUCH THE UNTOUCHABLE
         </h1>
         <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">

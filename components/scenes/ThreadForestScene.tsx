@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -19,11 +19,40 @@ interface Thread {
   line: THREE.Line;
 }
 
+const SPARK_COUNT = 600;
+
 function ThreadForest() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
   const threadsRef = useRef<Thread[]>([]);
   const timeRef = useRef(0);
   const containerRef = useRef<THREE.Group>(null);
+  const sparksRef = useRef<THREE.Points>(null);
+
+  // Floating firefly sparks drifting between the strands
+  const sparkGeometry = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const positions = new Float32Array(SPARK_COUNT * 3);
+    const colors = new Float32Array(SPARK_COUNT * 3);
+    const palette = ['#00ffdd', '#39ff14', '#00d9ff', '#ff00ff', '#8844ff'].map(
+      (h) => new THREE.Color(h)
+    );
+    for (let i = 0; i < SPARK_COUNT; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 40;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 24;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+      const c = palette[i % palette.length];
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return g;
+  }, []);
+
+  useEffect(() => {
+    return () => sparkGeometry.dispose();
+  }, [sparkGeometry]);
 
   // Initialize threads
   useEffect(() => {
@@ -84,7 +113,10 @@ function ThreadForest() {
       const material = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.85,
+        opacity: 1,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
         fog: false,
         linewidth: 2,
       });
@@ -155,18 +187,31 @@ function ThreadForest() {
 
       positionAttribute.needsUpdate = true;
     });
+
+    if (sparksRef.current) {
+      sparksRef.current.rotation.y += 0.0006;
+      sparksRef.current.position.y = Math.sin(timeRef.current * 0.25) * 1.2;
+    }
   });
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 4, 18]} />
-      <ambientLight intensity={0.3} />
-      <pointLight position={[0, 10, 15]} intensity={0.8} color="#00d9ff" />
-      <pointLight position={[-10, 5, -10]} intensity={0.4} color="#6600ff" />
 
       <group ref={containerRef} />
 
-      <fog attach="fog" args={['#000000', 5, 50]} />
+      <points ref={sparksRef} geometry={sparkGeometry}>
+        <pointsMaterial
+          size={0.22}
+          vertexColors
+          transparent
+          opacity={0.9}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          sizeAttenuation
+          toneMapped={false}
+        />
+      </points>
     </>
   );
 }
@@ -179,7 +224,12 @@ export default function ThreadForestScene() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-black relative" role="region" aria-label="Bioluminescent Thread Forest Scene">
+    <div
+      className="w-full h-full relative"
+      style={{ background: 'radial-gradient(ellipse at 50% 70%, #042f22 0%, #01130e 55%, #000000 100%)' }}
+      role="region"
+      aria-label="Bioluminescent Thread Forest Scene"
+    >
       {mounted && (
         <SceneCanvas>
           <ThreadForest />
@@ -188,7 +238,10 @@ export default function ThreadForestScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-5xl md:text-6xl font-light text-white tracking-widest text-center">
+        <h1
+          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
+          style={{ textShadow: '0 0 18px rgba(57,255,20,0.85), 0 0 60px rgba(0,255,221,0.55), 0 0 120px rgba(0,217,255,0.4)' }}
+        >
           EVERYTHING IS CONNECTED
         </h1>
         <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">

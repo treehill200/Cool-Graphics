@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { PerspectiveCamera } from '@react-three/drei';
+import { PerspectiveCamera, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 import SceneCanvas from '@/components/SceneCanvas';
@@ -19,6 +19,7 @@ interface Drone {
 function DroneField() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const glowRef = useRef<THREE.InstancedMesh>(null);
   const dronesRef = useRef<Drone[]>([]);
   const formationPhaseRef = useRef(0);
   const linesRef = useRef<THREE.LineSegments | null>(null);
@@ -35,6 +36,18 @@ function DroneField() {
       targetPosition: new THREE.Vector3(0, 0, 0),
       velocity: new THREE.Vector3(0, 0, 0),
     }));
+
+    // Neon color per drone (instance colors multiply with the white base material)
+    const palette = ['#00ffff', '#ff00ff', '#7df9ff', '#39ff14', '#ff6ec7'];
+    const c = new THREE.Color();
+    [meshRef.current, glowRef.current].forEach((m) => {
+      if (!m) return;
+      for (let i = 0; i < DRONE_COUNT; i++) {
+        c.set(palette[i % palette.length]);
+        m.setColorAt(i, c);
+      }
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    });
   }, []);
 
   useFrame(() => {
@@ -88,32 +101,43 @@ function DroneField() {
       temp.updateMatrix();
       meshRef.current!.setMatrixAt(index, temp.matrix);
 
+      if (glowRef.current) {
+        temp.scale.setScalar(scale * 3.4);
+        temp.updateMatrix();
+        glowRef.current.setMatrixAt(index, temp.matrix);
+      }
+
       positions.push(drone.position.x, drone.position.y, drone.position.z);
     });
 
     meshRef.current.instanceMatrix.needsUpdate = true;
+    if (glowRef.current) glowRef.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
-      <pointLight position={[15, 15, 15]} intensity={0.6} />
-      <pointLight position={[-12, -12, 8]} intensity={0.4} color="#4488ff" />
-      <ambientLight intensity={0.2} />
 
+      {/* Bright unlit cores */}
       <instancedMesh ref={meshRef} args={[undefined, undefined, DRONE_COUNT]}>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial
+        <meshBasicMaterial color="#ffffff" toneMapped={false} />
+      </instancedMesh>
+
+      {/* Additive halo layer around every drone */}
+      <instancedMesh ref={glowRef} args={[undefined, undefined, DRONE_COUNT]}>
+        <sphereGeometry args={[0.08, 8, 8]} />
+        <meshBasicMaterial
           color="#ffffff"
-          emissive="#88ccff"
-          emissiveIntensity={0.7}
-          metalness={0.95}
-          roughness={0.05}
-          wireframe={false}
+          toneMapped={false}
+          transparent
+          opacity={0.35}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
         />
       </instancedMesh>
 
-      <fog attach="fog" args={['#000000', 2, 60]} />
+      <Stars radius={80} depth={40} count={3000} factor={3} saturation={0.7} fade speed={0.6} />
     </>
   );
 }
@@ -126,7 +150,12 @@ export default function DroneConstellationScene() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-black relative" role="region" aria-label="Drone Constellation Scene">
+    <div
+      className="w-full h-full relative"
+      style={{ background: 'radial-gradient(ellipse at 50% 35%, #0a1f4d 0%, #03071f 55%, #000000 100%)' }}
+      role="region"
+      aria-label="Drone Constellation Scene"
+    >
       {mounted && (
         <SceneCanvas>
           <DroneField />
@@ -135,7 +164,10 @@ export default function DroneConstellationScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-5xl md:text-6xl font-light text-white tracking-widest text-center">
+        <h1
+          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
+          style={{ textShadow: '0 0 18px rgba(0,255,255,0.9), 0 0 60px rgba(0,255,255,0.5), 0 0 120px rgba(255,0,255,0.4)' }}
+        >
           THE SKY REMEMBERS
         </h1>
         <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">

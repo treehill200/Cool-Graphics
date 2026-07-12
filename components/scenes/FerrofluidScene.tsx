@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,17 +9,24 @@ import SceneCanvas from '@/components/SceneCanvas';
 
 function FerrofluidMesh() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
-  const meshRef = useRef<THREE.Mesh>(null);
-  const geometryRef = useRef<THREE.IcosahedronGeometry>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const timeRef = useRef(0);
   const originalPositionsRef = useRef<Float32Array | null>(null);
 
+  // One geometry shared by the solid blob and its neon wireframe skin,
+  // so the deformation drives both
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(4, 7), []);
+
+  useEffect(() => {
+    return () => geometry.dispose();
+  }, [geometry]);
+
   useFrame(() => {
-    if (!meshRef.current || !geometryRef.current) return;
+    if (!groupRef.current) return;
 
     timeRef.current += 0.016;
 
-    const positionAttribute = geometryRef.current.getAttribute('position');
+    const positionAttribute = geometry.getAttribute('position');
     const positions = positionAttribute.array as Float32Array;
 
     // Store original positions on first frame
@@ -79,33 +86,46 @@ function FerrofluidMesh() {
     }
 
     positionAttribute.needsUpdate = true;
-    geometryRef.current.computeVertexNormals();
+    geometry.computeVertexNormals();
 
     // Gentle rotation
-    meshRef.current.rotation.x += 0.0003;
-    meshRef.current.rotation.z += 0.0002;
+    groupRef.current.rotation.x += 0.0003;
+    groupRef.current.rotation.z += 0.0002;
   });
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
-      <pointLight position={[12, 12, 12]} intensity={0.5} />
-      <pointLight position={[-10, -10, 8]} intensity={0.3} color="#0055ff" />
-      <ambientLight intensity={0.15} />
+      <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={50} />
+      <pointLight position={[12, 12, 12]} intensity={250} color="#ff00ff" />
+      <pointLight position={[-10, -10, 8]} intensity={200} color="#00ffff" />
+      <pointLight position={[0, 12, -8]} intensity={150} color="#7d2fff" />
+      <ambientLight intensity={0.5} />
 
-      <mesh ref={meshRef}>
-        <icosahedronGeometry ref={geometryRef} args={[4, 7]} />
-        <meshStandardMaterial
-          color="#050510"
-          emissive="#1a3a5a"
-          emissiveIntensity={0.3}
-          metalness={0.98}
-          roughness={0.01}
-          wireframe={false}
-        />
-      </mesh>
+      <group ref={groupRef}>
+        {/* Liquid metal core */}
+        <mesh geometry={geometry}>
+          <meshStandardMaterial
+            color="#0a0a1e"
+            emissive="#3a0a8a"
+            emissiveIntensity={0.8}
+            metalness={0.9}
+            roughness={0.15}
+          />
+        </mesh>
 
-      <fog attach="fog" args={['#000000', 3, 50]} />
+        {/* Electric neon wireframe skin */}
+        <mesh geometry={geometry} scale={1.004}>
+          <meshBasicMaterial
+            color="#00eaff"
+            toneMapped={false}
+            wireframe
+            transparent
+            opacity={0.22}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
     </>
   );
 }
@@ -118,7 +138,12 @@ export default function FerrofluidScene() {
   }, []);
 
   return (
-    <div className="w-full h-full bg-black relative" role="region" aria-label="Magnetic Ferrofluid Scene">
+    <div
+      className="w-full h-full relative"
+      style={{ background: 'radial-gradient(ellipse at 50% 50%, #1a0533 0%, #05011a 55%, #000000 100%)' }}
+      role="region"
+      aria-label="Magnetic Ferrofluid Scene"
+    >
       {mounted && (
         <SceneCanvas>
           <FerrofluidMesh />
@@ -127,7 +152,10 @@ export default function FerrofluidScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1 className="text-5xl md:text-6xl font-light text-white tracking-widest text-center">
+        <h1
+          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
+          style={{ textShadow: '0 0 18px rgba(125,47,255,0.95), 0 0 60px rgba(0,234,255,0.55), 0 0 120px rgba(255,0,255,0.45)' }}
+        >
           INVISIBLE FORCES
         </h1>
         <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">
