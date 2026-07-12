@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
 
 const DRONE_COUNT = 200;
@@ -18,6 +19,7 @@ interface Drone {
 
 function DroneField() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
+  const { impulseRef } = usePointerImpulse();
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const glowRef = useRef<THREE.InstancedMesh>(null);
   const dronesRef = useRef<Drone[]>([]);
@@ -50,7 +52,7 @@ function DroneField() {
     });
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     formationPhaseRef.current += 0.001;
 
     const drones = dronesRef.current;
@@ -62,6 +64,29 @@ function DroneField() {
       -(cursorPos.y / window.innerHeight - 0.5) * 20,
       0
     );
+
+    // Cursor parallax: the camera drifts with the mouse for depth
+    const nx = cursorPos.x / window.innerWidth - 0.5;
+    const ny = cursorPos.y / window.innerHeight - 0.5;
+    state.camera.position.x += (nx * 3 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 3 - state.camera.position.y) * 0.03;
+    state.camera.lookAt(0, 0, 0);
+
+    // Click: scatter burst — the swarm explodes outward, then reforms
+    const imp = impulseRef.current;
+    if (imp) {
+      const impVec = new THREE.Vector3(
+        (imp.x / window.innerWidth - 0.5) * 20,
+        -(imp.y / window.innerHeight - 0.5) * 20,
+        0
+      );
+      drones.forEach((drone) => {
+        const dist = drone.position.distanceTo(impVec);
+        const dir = new THREE.Vector3().subVectors(drone.position, impVec).normalize();
+        drone.velocity.addScaledVector(dir, 0.6 * Math.exp(-dist * 0.12));
+      });
+      impulseRef.current = null;
+    }
 
     const positions: number[] = [];
 

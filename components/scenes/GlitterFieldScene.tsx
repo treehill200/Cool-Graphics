@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
 
 const PARTICLE_COUNT = 10000;
@@ -20,6 +21,7 @@ interface Particle {
 
 function GlitterField() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
+  const { impulseRef } = usePointerImpulse();
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const particlesRef = useRef<Particle[]>([]);
   const timeRef = useRef(0);
@@ -54,7 +56,7 @@ function GlitterField() {
     }
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     timeRef.current += 0.016;
 
     const mesh = meshRef.current;
@@ -66,6 +68,25 @@ function GlitterField() {
       -(cursorPos.y / window.innerHeight - 0.5) * 24,
       0
     );
+
+    // Cursor parallax
+    const nx = cursorPos.x / window.innerWidth - 0.5;
+    const ny = cursorPos.y / window.innerHeight - 0.5;
+    state.camera.position.x += (nx * 2 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 2 - state.camera.position.y) * 0.03;
+    state.camera.lookAt(0, 0, 0);
+
+    // Click: glitter shockwave radiating from the click point
+    const imp = impulseRef.current;
+    let impVec: THREE.Vector3 | null = null;
+    if (imp) {
+      impVec = new THREE.Vector3(
+        (imp.x / window.innerWidth - 0.5) * 24,
+        -(imp.y / window.innerHeight - 0.5) * 24,
+        0
+      );
+      impulseRef.current = null;
+    }
 
     const particles = particlesRef.current;
     particles.forEach((particle, index) => {
@@ -87,6 +108,13 @@ function GlitterField() {
             .multiplyScalar((7 - distToCursor) * 0.12 * particle.mass);
           particle.velocity.add(pull);
         }
+      }
+
+      // Shockwave impulse
+      if (impVec) {
+        const distToBlast = particle.position.distanceTo(impVec);
+        const dir = new THREE.Vector3().subVectors(particle.position, impVec).normalize();
+        particle.velocity.addScaledVector(dir, 1.4 * Math.exp(-distToBlast * 0.22) * particle.mass);
       }
 
       // Physics

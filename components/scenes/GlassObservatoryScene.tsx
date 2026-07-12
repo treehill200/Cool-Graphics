@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
 
 interface ArchElement {
@@ -15,10 +16,13 @@ interface ArchElement {
 
 function GlassArchitecture() {
   const { position: cursorPos } = useCursorPosition();
+  const { impulseRef } = usePointerImpulse();
   const groupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Mesh>(null);
   const timeRef = useRef(0);
+  const spinBoostRef = useRef(0);
+  const flareRef = useRef(0);
   const elementsRef = useRef<ArchElement[]>([]);
 
   // Create glass elements
@@ -115,14 +119,30 @@ function GlassArchitecture() {
     }
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!groupRef.current) return;
 
     timeRef.current += 0.016;
 
+    // Cursor parallax
+    const nx = cursorPos.x / window.innerWidth - 0.5;
+    const ny = cursorPos.y / window.innerHeight - 0.5;
+    state.camera.position.x += (nx * 4 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (8 - ny * 3 - state.camera.position.y) * 0.03;
+    state.camera.lookAt(0, 0, 0);
+
+    // Click: kick the whole observatory into a spin and flare the core
+    if (impulseRef.current) {
+      spinBoostRef.current += 0.012;
+      flareRef.current = 1;
+      impulseRef.current = null;
+    }
+    spinBoostRef.current *= 0.96;
+    flareRef.current *= 0.94;
+
     // Rotate entire structure smoothly
     groupRef.current.rotation.x += 0.00015;
-    groupRef.current.rotation.y += 0.0003;
+    groupRef.current.rotation.y += 0.0003 + spinBoostRef.current;
     groupRef.current.rotation.z += 0.00005;
 
     // Animate individual elements
@@ -149,13 +169,13 @@ function GlassArchitecture() {
       }
     });
 
-    // Pulse the blazing core
+    // Pulse the blazing core (clicks flare it up)
     if (coreRef.current) {
-      const s = 1 + Math.sin(timeRef.current * 1.4) * 0.12;
+      const s = 1 + Math.sin(timeRef.current * 1.4) * 0.12 + flareRef.current * 0.9;
       coreRef.current.scale.setScalar(s);
     }
     if (haloRef.current) {
-      const s = 1 + Math.sin(timeRef.current * 1.4 + 0.6) * 0.18;
+      const s = 1 + Math.sin(timeRef.current * 1.4 + 0.6) * 0.18 + flareRef.current * 1.4;
       haloRef.current.scale.setScalar(s);
     }
   });

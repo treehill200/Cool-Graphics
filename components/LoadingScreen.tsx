@@ -62,11 +62,14 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="mb-16"
         >
-          <h1 className="text-6xl md:text-7xl font-light text-white tracking-widest">
+          <h1
+            className="text-6xl md:text-7xl font-light text-white tracking-widest"
+            style={{ textShadow: '0 0 20px rgba(0,255,255,0.8), 0 0 70px rgba(255,0,255,0.5)' }}
+          >
             EXPERIENCE
           </h1>
           <motion.div
-            className="h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mt-4"
+            className="h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mt-4"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
@@ -76,7 +79,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
         {/* Loading bar */}
         <div className="w-72 h-1 bg-white/10 rounded-full overflow-hidden mb-8">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400"
+            className="h-full bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ ease: 'linear' }}
@@ -103,7 +106,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="w-2 h-2 bg-blue-400 rounded-full"
+              className="w-2 h-2 bg-cyan-400 rounded-full"
               animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{
                 duration: 1.5,

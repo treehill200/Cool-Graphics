@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
 
 const THREAD_COUNT = 250;
@@ -23,6 +24,7 @@ const SPARK_COUNT = 600;
 
 function ThreadForest() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
+  const { impulseRef } = usePointerImpulse();
   const threadsRef = useRef<Thread[]>([]);
   const timeRef = useRef(0);
   const containerRef = useRef<THREE.Group>(null);
@@ -141,7 +143,7 @@ function ThreadForest() {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     timeRef.current += 0.016;
 
     const cursorNorm = new THREE.Vector3(
@@ -150,6 +152,33 @@ function ThreadForest() {
       0
     );
 
+    // Cursor parallax
+    const nx = cursorPos.x / window.innerWidth - 0.5;
+    const ny = cursorPos.y / window.innerHeight - 0.5;
+    state.camera.position.x += (nx * 3 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (4 - ny * 2 - state.camera.position.y) * 0.03;
+    state.camera.lookAt(0, 2, 0);
+
+    // Click pulse: an expanding ring of displacement travels through the forest
+    let pulseVec: THREE.Vector3 | null = null;
+    let pulseRadius = 0;
+    let pulseStrength = 0;
+    const imp = impulseRef.current;
+    if (imp) {
+      const age = (performance.now() - imp.time) / 1000;
+      if (age < 2.2) {
+        pulseVec = new THREE.Vector3(
+          (imp.x / window.innerWidth - 0.5) * 35,
+          -(imp.y / window.innerHeight - 0.5) * 25,
+          0
+        );
+        pulseRadius = age * 16;
+        pulseStrength = 1 - age / 2.2;
+      } else {
+        impulseRef.current = null;
+      }
+    }
+
     threadsRef.current.forEach((thread, threadIdx) => {
       const positionAttribute = thread.geometry.getAttribute('position');
       const positions = positionAttribute.array as Float32Array;
@@ -157,19 +186,7 @@ function ThreadForest() {
       thread.points.forEach((point, pointIdx) => {
         const basePoint = thread.basePoints[pointIdx];
 
-        // Cursor interaction
-        if (isMouseOver) {
-          const distToCursor = point.distanceTo(cursorNorm);
-          if (distToCursor < 6) {
-            const push = new THREE.Vector3()
-              .subVectors(point, cursorNorm)
-              .normalize()
-              .multiplyScalar((6 - distToCursor) * 0.22);
-            point.add(push);
-          }
-        }
-
-        // Organic sway
+        // Organic sway (absolute position each frame, so effects stack after it)
         const swayX = Math.sin(timeRef.current * 0.4 + threadIdx * 0.15 + pointIdx * 0.2) * 0.4;
         const swayZ = Math.cos(timeRef.current * 0.5 + threadIdx * 0.12 + pointIdx * 0.25) * 0.35;
 
@@ -177,8 +194,28 @@ function ThreadForest() {
         point.y = basePoint.y;
         point.z = basePoint.z + swayZ;
 
-        // Smooth return to base with damping
-        point.lerp(basePoint, 0.08);
+        // Cursor pushes strands aside
+        if (isMouseOver) {
+          const distToCursor = point.distanceTo(cursorNorm);
+          if (distToCursor < 6) {
+            const push = new THREE.Vector3()
+              .subVectors(point, cursorNorm)
+              .normalize()
+              .multiplyScalar((6 - distToCursor) * 0.35);
+            point.add(push);
+          }
+        }
+
+        // Traveling pulse ring displaces strands as it passes
+        if (pulseVec) {
+          const distToPulse = point.distanceTo(pulseVec);
+          const ring =
+            Math.exp(-((distToPulse - pulseRadius) ** 2) * 0.2) * pulseStrength;
+          if (ring > 0.001) {
+            const dir = new THREE.Vector3().subVectors(point, pulseVec).normalize();
+            point.addScaledVector(dir, ring * 2.4);
+          }
+        }
 
         positions[pointIdx * 3] = point.x;
         positions[pointIdx * 3 + 1] = point.y;

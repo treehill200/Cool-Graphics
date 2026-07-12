@@ -5,10 +5,12 @@ import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
 
 function FerrofluidMesh() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
+  const { isDownRef } = usePointerImpulse();
   const groupRef = useRef<THREE.Group>(null);
   const timeRef = useRef(0);
   const originalPositionsRef = useRef<Float32Array | null>(null);
@@ -21,10 +23,17 @@ function FerrofluidMesh() {
     return () => geometry.dispose();
   }, [geometry]);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!groupRef.current) return;
 
     timeRef.current += 0.016;
+
+    // Cursor parallax
+    const nx = cursorPos.x / window.innerWidth - 0.5;
+    const ny = cursorPos.y / window.innerHeight - 0.5;
+    state.camera.position.x += (nx * 2.5 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 2.5 - state.camera.position.y) * 0.03;
+    state.camera.lookAt(0, 0, 0);
 
     const positionAttribute = geometry.getAttribute('position');
     const positions = positionAttribute.array as Float32Array;
@@ -54,9 +63,11 @@ function FerrofluidMesh() {
       let py = oy;
       let pz = oz;
 
-      // Magnetic spike effect (stronger when mouse is over)
+      // Magnetic spike effect — holding the pointer reverses polarity,
+      // pulling the liquid inward into craters instead of spikes
       if (isMouseOver && distToCursor < 7) {
-        const magneticForce = (7 - distToCursor) * 0.5;
+        const polarity = isDownRef.current ? -1.2 : 1;
+        const magneticForce = (7 - distToCursor) * 0.5 * polarity;
         const direction = new THREE.Vector3()
           .subVectors(vertex, cursorNorm)
           .normalize();

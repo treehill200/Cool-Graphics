@@ -51,6 +51,16 @@ export default function HelpPanel() {
               </div>
 
               <div className="flex gap-3">
+                <div className="text-blue-400 min-w-fit">🖱️ Click</div>
+                <div>Shockwaves, pulses &amp; bursts</div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="text-blue-400 min-w-fit">🖱️ Hold</div>
+                <div>Reverse the magnet (world III)</div>
+              </div>
+
+              <div className="flex gap-3">
                 <div className="text-blue-400 min-w-fit">👆 Swipe</div>
                 <div>Navigate on mobile</div>
               </div>
