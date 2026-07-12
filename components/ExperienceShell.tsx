@@ -14,6 +14,8 @@ import GlassObservatoryScene from './scenes/GlassObservatoryScene';
 import SceneNavigation from './SceneNavigation';
 import SoundController from './SoundController';
 import SceneTransition from './SceneTransition';
+import PerformanceMonitor from './PerformanceMonitor';
+import HelpPanel from './HelpPanel';
 
 const SCENES = [
   DroneConstellationScene,
@@ -170,8 +172,14 @@ export default function ExperienceShell() {
       {/* Sound Control */}
       <SoundController />
 
+      {/* Help Panel */}
+      <HelpPanel />
+
       {/* Transition Effect */}
       <SceneTransition isActive={isTransitioning} direction={transitionDirection} />
+
+      {/* Performance Monitor (Press P to toggle) */}
+      <PerformanceMonitor />
 
       {/* Skip to main navigation message for screen readers */}
       <a href="#main-content" className="sr-only">
