@@ -89,18 +89,32 @@ A final serene environment with floating glass architecture elements, rotating p
 
 ---
 
-## Navigation
+## Navigation & Controls
 
-**Desktop:**
-- `Arrow Keys` / `Scroll Wheel` - Navigate between pages
-- `Mouse Movement` - Interactive cursor effects (varies by page)
-- `Click` - Page-specific interactions
-- Bottom navigation dots - Jump to specific page
+### Keyboard Shortcuts
+- **`↑ ↓` or `← →`** - Navigate between worlds
+- **`Scroll Wheel`** - Advance to next world
+- **`F`** - Toggle fullscreen mode
+- **`P`** - Show/hide FPS performance monitor
+- **`?` (in help panel)** - View complete navigation guide
+- **`M`** - Mute/unmute audio (if enabled)
 
-**Mobile:**
-- `Swipe Up/Down` - Navigate between pages
-- `Touch Drag` - Interactive cursor effects
-- Bottom navigation dots - Jump to specific page
+### Mouse Interactions
+- **Mouse Movement** - Interactive cursor effects (varies by page)
+- **Click** - Page-specific interactions and formations
+- **Drag** - Create currents and disturbances
+
+### Navigation UI
+- **Bottom Dots** - Jump to specific world (1-5)
+- **Help Button** (Bottom Right, `?`) - View tips and shortcuts
+- **Sound Control** (Top Left) - Toggle audio
+- **Fullscreen** (Top Right) - Enter immersive fullscreen mode
+
+### Mobile
+- **Swipe Up/Down** - Navigate between pages
+- **Touch Drag** - Interactive cursor effects
+- **Tap** - Page-specific interactions
+- **Navigation Dots** - Jump to specific world
 
 ---
 
@@ -145,6 +159,15 @@ The dev server supports hot reloading - changes update instantly.
 - Dynamic quality reduction on low-end devices
 - Lazy loading for scene components
 - Efficient animation frames
+- Real-time FPS monitoring
+
+✅ **Enhanced UI & Feedback**
+- Animated loading screen with progress bar
+- Cinematic page transitions with particle effects
+- Fullscreen mode (Press F)
+- Interactive help panel with navigation guide
+- Performance monitor (Press P)
+- Light streaks during scene changes
 
 ---
 

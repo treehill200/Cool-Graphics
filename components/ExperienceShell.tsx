@@ -16,6 +16,7 @@ import SoundController from './SoundController';
 import SceneTransition from './SceneTransition';
 import PerformanceMonitor from './PerformanceMonitor';
 import HelpPanel from './HelpPanel';
+import FullscreenToggle from './FullscreenToggle';
 
 const SCENES = [
   DroneConstellationScene,
@@ -171,6 +172,9 @@ export default function ExperienceShell() {
 
       {/* Sound Control */}
       <SoundController />
+
+      {/* Fullscreen Toggle */}
+      <FullscreenToggle />
 
       {/* Help Panel */}
       <HelpPanel />
