@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { PerspectiveCamera, PointLight } from '@react-three/drei';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera, PointLight, useHelper } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
-const DRONE_COUNT = 150;
+const DRONE_COUNT = 200;
 
 interface Drone {
   position: THREE.Vector3;
@@ -20,97 +20,99 @@ function DroneField() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dronesRef = useRef<Drone[]>([]);
   const formationPhaseRef = useRef(0);
+  const linesRef = useRef<THREE.LineSegments | null>(null);
 
   // Initialize drones
   useEffect(() => {
     dronesRef.current = Array.from({ length: DRONE_COUNT }, (_, i) => ({
       id: i,
       position: new THREE.Vector3(
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 25
       ),
       targetPosition: new THREE.Vector3(0, 0, 0),
       velocity: new THREE.Vector3(0, 0, 0),
     }));
   }, []);
 
-  // Animation loop
-  useEffect(() => {
-    const interval = setInterval(() => {
-      formationPhaseRef.current += 0.001;
+  useFrame(() => {
+    formationPhaseRef.current += 0.001;
 
-      const drones = dronesRef.current;
-      if (!meshRef.current) return;
+    const drones = dronesRef.current;
+    if (!meshRef.current) return;
 
-      const temp = new THREE.Object3D();
-      const cursorVector = new THREE.Vector3(cursorPos.x - window.innerWidth / 2, window.innerHeight / 2 - cursorPos.y, 0).normalize().multiplyScalar(8);
+    const temp = new THREE.Object3D();
+    const cursorVector = new THREE.Vector3(
+      (cursorPos.x / window.innerWidth - 0.5) * 20,
+      -(cursorPos.y / window.innerHeight - 0.5) * 20,
+      0
+    );
 
-      drones.forEach((drone, index) => {
-        // Calculate formation target based on phase
-        const phase = formationPhaseRef.current + (index / DRONE_COUNT) * Math.PI * 2;
-        const angle = phase;
-        const radius = 8 + Math.sin(formationPhaseRef.current * 0.5) * 2;
+    const positions: number[] = [];
 
-        drone.targetPosition.set(
-          Math.cos(angle) * radius,
-          Math.sin(angle * 0.5) * 4,
-          Math.sin(angle * 1.5) * radius
-        );
+    drones.forEach((drone, index) => {
+      const phase = formationPhaseRef.current + (index / DRONE_COUNT) * Math.PI * 2;
+      const angle = phase;
+      const radius = 8 + Math.sin(formationPhaseRef.current * 0.5) * 3;
 
-        // Apply cursor repulsion
-        if (isMouseOver) {
-          const distToCursor = drone.position.distanceTo(cursorVector);
-          if (distToCursor < 5) {
-            const repulsion = new THREE.Vector3()
-              .subVectors(drone.position, cursorVector)
-              .normalize()
-              .multiplyScalar((5 - distToCursor) * 0.2);
-            drone.targetPosition.add(repulsion);
-          }
+      drone.targetPosition.set(
+        Math.cos(angle) * radius + Math.sin(phase * 0.3) * 1,
+        Math.sin(angle * 0.5) * 5 + Math.cos(phase * 0.2) * 1,
+        Math.sin(angle * 1.5) * radius + Math.cos(phase * 0.4) * 1
+      );
+
+      if (isMouseOver) {
+        const distToCursor = drone.position.distanceTo(cursorVector);
+        if (distToCursor < 6) {
+          const repulsion = new THREE.Vector3()
+            .subVectors(drone.position, cursorVector)
+            .normalize()
+            .multiplyScalar((6 - distToCursor) * 0.25);
+          drone.targetPosition.add(repulsion);
         }
+      }
 
-        // Smooth movement
-        drone.velocity.lerpVectors(
-          drone.velocity,
-          new THREE.Vector3().subVectors(drone.targetPosition, drone.position).multiplyScalar(0.01),
-          0.1
-        );
+      drone.velocity.lerpVectors(
+        drone.velocity,
+        new THREE.Vector3().subVectors(drone.targetPosition, drone.position).multiplyScalar(0.008),
+        0.08
+      );
 
-        drone.position.add(drone.velocity);
+      drone.position.add(drone.velocity);
 
-        // Update instanced mesh
-        temp.position.copy(drone.position);
-        temp.scale.setScalar(0.1 + Math.sin(phase) * 0.05);
-        temp.updateMatrix();
-        meshRef.current.setMatrixAt(index, temp.matrix);
-      });
+      temp.position.copy(drone.position);
+      const scale = 0.1 + Math.sin(phase + formationPhaseRef.current) * 0.06;
+      temp.scale.setScalar(scale);
+      temp.updateMatrix();
+      meshRef.current!.setMatrixAt(index, temp.matrix);
 
-      meshRef.current.instanceMatrix.needsUpdate = true;
-    }, 16);
+      positions.push(drone.position.x, drone.position.y, drone.position.z);
+    });
 
-    return () => clearInterval(interval);
-  }, [cursorPos, isMouseOver]);
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0, 15]} />
-      <pointLight position={[10, 10, 10]} intensity={0.5} />
-      <pointLight position={[-10, -10, 5]} intensity={0.3} color="#4488ff" />
+      <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
+      <pointLight position={[15, 15, 15]} intensity={0.6} />
+      <pointLight position={[-12, -12, 8]} intensity={0.4} color="#4488ff" />
+      <ambientLight intensity={0.2} />
 
       <instancedMesh ref={meshRef} args={[undefined, undefined, DRONE_COUNT]}>
-        <sphereGeometry args={[0.08, 8, 8]} />
+        <sphereGeometry args={[0.08, 16, 16]} />
         <meshStandardMaterial
           color="#ffffff"
           emissive="#88ccff"
-          emissiveIntensity={0.8}
-          metalness={0.9}
-          roughness={0.1}
+          emissiveIntensity={0.7}
+          metalness={0.95}
+          roughness={0.05}
+          wireframe={false}
         />
       </instancedMesh>
 
-      {/* Atmospheric fog */}
-      <fog attach="fog" args={['#000000', 1, 40]} />
+      <fog attach="fog" args={['#000000', 2, 60]} />
     </>
   );
 }

@@ -1,48 +1,53 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
 function FerrofluidMesh() {
-  const { position: cursorPos } = useCursorPosition();
+  const { position: cursorPos, isMouseOver } = useCursorPosition();
   const meshRef = useRef<THREE.Mesh>(null);
   const geometryRef = useRef<THREE.IcosahedronGeometry>(null);
   const timeRef = useRef(0);
-  const { camera } = useThree();
+  const originalPositionsRef = useRef<Float32Array | null>(null);
 
   useFrame(() => {
     if (!meshRef.current || !geometryRef.current) return;
 
     timeRef.current += 0.016;
 
-    // Update vertices with magnetic effect
     const positionAttribute = geometryRef.current.getAttribute('position');
     const positions = positionAttribute.array as Float32Array;
-    const originalPositions = geometryRef.current.attributes.position.array as Float32Array;
+
+    // Store original positions on first frame
+    if (!originalPositionsRef.current) {
+      originalPositionsRef.current = new Float32Array(positions);
+    }
+
+    const originalPositions = originalPositionsRef.current;
 
     const cursorNorm = new THREE.Vector3(
-      (cursorPos.x / window.innerWidth - 0.5) * 20,
-      -(cursorPos.y / window.innerHeight - 0.5) * 20,
+      (cursorPos.x / window.innerWidth - 0.5) * 18,
+      -(cursorPos.y / window.innerHeight - 0.5) * 18,
       0
     );
 
     for (let i = 0; i < positions.length; i += 3) {
-      const x = originalPositions[i];
-      const y = originalPositions[i + 1];
-      const z = originalPositions[i + 2];
+      const ox = originalPositions[i];
+      const oy = originalPositions[i + 1];
+      const oz = originalPositions[i + 2];
 
-      const vertex = new THREE.Vector3(x, y, z);
+      const vertex = new THREE.Vector3(ox, oy, oz);
       const distToCursor = vertex.distanceTo(cursorNorm);
 
-      let px = x;
-      let py = y;
-      let pz = z;
+      let px = ox;
+      let py = oy;
+      let pz = oz;
 
-      // Magnetic spike effect
-      if (distToCursor < 8) {
-        const magneticForce = (8 - distToCursor) * 0.4;
+      // Magnetic spike effect (stronger when mouse is over)
+      if (isMouseOver && distToCursor < 7) {
+        const magneticForce = (7 - distToCursor) * 0.5;
         const direction = new THREE.Vector3()
           .subVectors(vertex, cursorNorm)
           .normalize();
@@ -52,14 +57,19 @@ function FerrofluidMesh() {
         pz += direction.z * magneticForce;
       }
 
-      // Wave animation
-      const waveAmount = Math.sin(timeRef.current * 0.8 + vertex.length() * 10) * 0.5;
-      const angle = Math.atan2(vertex.y, vertex.x);
-      const radius = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y + vertex.z * vertex.z);
+      // Organic wave animation
+      const vertexLength = Math.sqrt(ox * ox + oy * oy + oz * oz);
+      const waveAmount = Math.sin(timeRef.current * 0.6 + vertexLength * 3) * 0.4;
+      const angle = Math.atan2(oy, ox);
 
-      px += Math.cos(angle) * waveAmount;
-      py += Math.sin(angle) * waveAmount;
-      pz += Math.sin(timeRef.current * 0.5 + angle) * 0.2;
+      px += Math.cos(angle) * waveAmount * 0.5;
+      py += Math.sin(angle) * waveAmount * 0.5;
+      pz += Math.sin(timeRef.current * 0.4 + angle) * 0.3;
+
+      // Smooth deformation
+      px = ox + (px - ox) * 0.7;
+      py = oy + (py - oy) * 0.7;
+      pz = oz + (pz - oz) * 0.7;
 
       positions[i] = px;
       positions[i + 1] = py;
@@ -68,27 +78,32 @@ function FerrofluidMesh() {
 
     positionAttribute.needsUpdate = true;
     geometryRef.current.computeVertexNormals();
+
+    // Gentle rotation
+    meshRef.current.rotation.x += 0.0003;
+    meshRef.current.rotation.z += 0.0002;
   });
 
   return (
     <>
-      <perspectiveCamera makeDefault position={[0, 0, 8]} />
-      <pointLight position={[10, 10, 10]} intensity={0.4} />
-      <pointLight position={[-8, -8, 6]} intensity={0.2} color="#0066ff" />
+      <perspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
+      <pointLight position={[12, 12, 12]} intensity={0.5} />
+      <pointLight position={[-10, -10, 8]} intensity={0.3} color="#0055ff" />
+      <ambientLight intensity={0.15} />
 
       <mesh ref={meshRef}>
-        <icosahedronGeometry ref={geometryRef} args={[4, 6]} />
+        <icosahedronGeometry ref={geometryRef} args={[4, 7]} />
         <meshStandardMaterial
-          color="#0a0a12"
-          emissive="#1a2a4a"
-          emissiveIntensity={0.4}
-          metalness={0.95}
-          roughness={0.02}
-          envMapIntensity={1}
+          color="#050510"
+          emissive="#1a3a5a"
+          emissiveIntensity={0.3}
+          metalness={0.98}
+          roughness={0.01}
+          wireframe={false}
         />
       </mesh>
 
-      <fog attach="fog" args={['#000000', 3, 30]} />
+      <fog attach="fog" args={['#000000', 3, 50]} />
     </>
   );
 }

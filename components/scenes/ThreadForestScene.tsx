@@ -1,108 +1,109 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
-const THREAD_COUNT = 200;
-const POINTS_PER_THREAD = 32;
+const THREAD_COUNT = 250;
+const POINTS_PER_THREAD = 40;
 
 interface Thread {
   points: THREE.Vector3[];
-  targetPoints: THREE.Vector3[];
+  basePoints: THREE.Vector3[];
   color: THREE.Color;
   id: number;
+  geometry: THREE.BufferGeometry;
+  line: THREE.LineSegments;
 }
 
 function ThreadForest() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
-  const linesRef = useRef<THREE.LineSegments[]>([]);
   const threadsRef = useRef<Thread[]>([]);
   const timeRef = useRef(0);
   const containerRef = useRef<THREE.Group>(null);
 
   // Initialize threads
   useEffect(() => {
+    if (!containerRef.current) return;
+
     const threads: Thread[] = [];
 
+    const colors = [
+      0x00d9ff,
+      0x6600ff,
+      0x00ff88,
+      0xff00ff,
+      0x00ffdd,
+      0x8844ff,
+    ];
+
     for (let t = 0; t < THREAD_COUNT; t++) {
-      const baseX = (Math.random() - 0.5) * 30;
-      const baseZ = (Math.random() - 0.5) * 30;
-      const baseY = -8;
+      const baseX = (Math.random() - 0.5) * 35;
+      const baseZ = (Math.random() - 0.5) * 35;
+      const baseY = -10;
 
       const points: THREE.Vector3[] = [];
-      const targetPoints: THREE.Vector3[] = [];
+      const basePoints: THREE.Vector3[] = [];
 
       for (let p = 0; p < POINTS_PER_THREAD; p++) {
-        const y = baseY + (p / POINTS_PER_THREAD) * 16;
-        const wave = Math.sin((baseX + baseZ + t) * 0.1 + p * 0.3) * 0.5;
+        const y = baseY + (p / POINTS_PER_THREAD) * 20;
+        const angle = (baseX + baseZ + t) * 0.05 + p * 0.25;
+        const waveAmount = Math.sin(angle) * 0.6;
 
         const point = new THREE.Vector3(
-          baseX + wave,
+          baseX + waveAmount,
           y,
-          baseZ + Math.cos((baseX + baseZ + t) * 0.1 + p * 0.3) * 0.5
+          baseZ + Math.cos(angle) * 0.6
         );
 
         points.push(point.clone());
-        targetPoints.push(point.clone());
+        basePoints.push(point.clone());
       }
 
-      const colors = [
-        new THREE.Color(0x00d9ff),
-        new THREE.Color(0x6600ff),
-        new THREE.Color(0x00ff88),
-        new THREE.Color(0xff00ff),
-      ];
-
-      threads.push({
-        points,
-        targetPoints,
-        color: colors[t % colors.length],
-        id: t,
-      });
-    }
-
-    threadsRef.current = threads;
-  }, []);
-
-  // Create line meshes
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    threadsRef.current.forEach((thread) => {
       const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(thread.points.length * 3);
-      const colors = new Float32Array(thread.points.length * 3);
+      const positions = new Float32Array(points.length * 3);
+      const colors_array = new Float32Array(points.length * 3);
 
-      thread.points.forEach((point, i) => {
+      points.forEach((point, i) => {
         positions[i * 3] = point.x;
         positions[i * 3 + 1] = point.y;
         positions[i * 3 + 2] = point.z;
 
-        colors[i * 3] = thread.color.r;
-        colors[i * 3 + 1] = thread.color.g;
-        colors[i * 3 + 2] = thread.color.b;
+        const c = new THREE.Color(colors[t % colors.length]);
+        colors_array[i * 3] = c.r;
+        colors_array[i * 3 + 1] = c.g;
+        colors_array[i * 3 + 2] = c.b;
       });
 
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors_array, 3));
 
       const material = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.85,
         fog: false,
-        linewidth: 1,
+        linewidth: 2,
       });
 
       const line = new THREE.LineSegments(geometry, material);
-      containerRef.current?.add(line);
-      linesRef.current.push(line);
-    });
+      containerRef.current.add(line);
+
+      threads.push({
+        points,
+        basePoints,
+        color: new THREE.Color(colors[t % colors.length]),
+        id: t,
+        geometry,
+        line,
+      });
+    }
+
+    threadsRef.current = threads;
 
     return () => {
-      linesRef.current.forEach((line) => containerRef.current?.remove(line));
+      threads.forEach((t) => containerRef.current?.remove(t.line));
     };
   }, []);
 
@@ -110,54 +111,47 @@ function ThreadForest() {
     timeRef.current += 0.016;
 
     const cursorNorm = new THREE.Vector3(
-      (cursorPos.x / window.innerWidth - 0.5) * 30,
-      -(cursorPos.y / window.innerHeight - 0.5) * 20,
+      (cursorPos.x / window.innerWidth - 0.5) * 35,
+      -(cursorPos.y / window.innerHeight - 0.5) * 25,
       0
     );
 
     threadsRef.current.forEach((thread, threadIdx) => {
-      thread.points.forEach((point, pointIdx) => {
-        const baseTarget = thread.targetPoints[pointIdx];
+      const positionAttribute = thread.geometry.getAttribute('position');
+      const positions = positionAttribute.array as Float32Array;
 
-        // Apply cursor interaction
+      thread.points.forEach((point, pointIdx) => {
+        const basePoint = thread.basePoints[pointIdx];
+
+        // Cursor interaction
         if (isMouseOver) {
           const distToCursor = point.distanceTo(cursorNorm);
-          if (distToCursor < 5) {
-            const pushback = new THREE.Vector3()
+          if (distToCursor < 6) {
+            const push = new THREE.Vector3()
               .subVectors(point, cursorNorm)
               .normalize()
-              .multiplyScalar((5 - distToCursor) * 0.2);
-            point.add(pushback);
+              .multiplyScalar((6 - distToCursor) * 0.22);
+            point.add(push);
           }
         }
 
-        // Gentle sway
-        const sway = Math.sin(
-          timeRef.current * 0.5 + threadIdx * 0.1 + pointIdx * 0.2
-        ) * 0.3;
+        // Organic sway
+        const swayX = Math.sin(timeRef.current * 0.4 + threadIdx * 0.15 + pointIdx * 0.2) * 0.4;
+        const swayZ = Math.cos(timeRef.current * 0.5 + threadIdx * 0.12 + pointIdx * 0.25) * 0.35;
 
-        point.x = baseTarget.x + sway;
-        point.y = baseTarget.y;
-        point.z = baseTarget.z + Math.cos(timeRef.current * 0.6 + threadIdx * 0.1) * 0.2;
+        point.x = basePoint.x + swayX;
+        point.y = basePoint.y;
+        point.z = basePoint.z + swayZ;
 
-        // Smoothly return
-        point.lerp(baseTarget, 0.05);
+        // Smooth return to base with damping
+        point.lerp(basePoint, 0.08);
+
+        positions[pointIdx * 3] = point.x;
+        positions[pointIdx * 3 + 1] = point.y;
+        positions[pointIdx * 3 + 2] = point.z;
       });
 
-      // Update geometry
-      const line = linesRef.current[threadIdx];
-      if (line) {
-        const positionAttribute = line.geometry.getAttribute('position');
-        const positions = positionAttribute.array as Float32Array;
-
-        thread.points.forEach((point, i) => {
-          positions[i * 3] = point.x;
-          positions[i * 3 + 1] = point.y;
-          positions[i * 3 + 2] = point.z;
-        });
-
-        positionAttribute.needsUpdate = true;
-      }
+      positionAttribute.needsUpdate = true;
     });
   });
 
