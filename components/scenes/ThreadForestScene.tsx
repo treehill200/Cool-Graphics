@@ -124,6 +124,7 @@ function ThreadForest() {
       });
 
       const line = new THREE.Line(geometry, material);
+      line.frustumCulled = false;
       containerRef.current.add(line);
 
       threads.push({
@@ -237,7 +238,7 @@ function ThreadForest() {
 
       <group ref={containerRef} />
 
-      <points ref={sparksRef} geometry={sparkGeometry}>
+      <points ref={sparksRef} geometry={sparkGeometry} frustumCulled={false}>
         <pointsMaterial
           size={0.22}
           vertexColors

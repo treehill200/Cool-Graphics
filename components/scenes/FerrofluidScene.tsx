@@ -114,7 +114,7 @@ function FerrofluidMesh() {
 
       <group ref={groupRef}>
         {/* Liquid metal core */}
-        <mesh geometry={geometry}>
+        <mesh geometry={geometry} frustumCulled={false}>
           <meshStandardMaterial
             color="#0a0a1e"
             emissive="#3a0a8a"
@@ -125,7 +125,7 @@ function FerrofluidMesh() {
         </mesh>
 
         {/* Electric neon wireframe skin */}
-        <mesh geometry={geometry} scale={1.004}>
+        <mesh geometry={geometry} scale={1.004} frustumCulled={false}>
           <meshBasicMaterial
             color="#00eaff"
             toneMapped={false}

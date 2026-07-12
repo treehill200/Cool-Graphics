@@ -128,7 +128,11 @@ function GlitterField() {
 
       // Update matrix
       temp.position.copy(particle.position);
-      const scale = 1.1 + Math.sin(timeRef.current * 2 + particle.life * 100) * 0.7;
+      // Every 7th particle is an oversized bokeh sparkle so the field reads
+      // clearly even on high-DPI screens where 1-2px quads disappear
+      const bokeh = index % 7 === 0 ? 2.4 : 1;
+      const scale =
+        (2.4 + Math.sin(timeRef.current * 2 + particle.life * 100) * 1.4) * bokeh;
       temp.scale.setScalar(scale);
       temp.rotation.z = Math.atan2(particle.velocity.y, particle.velocity.x) + timeRef.current;
 
@@ -143,7 +147,7 @@ function GlitterField() {
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={55} />
 
-      <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]} frustumCulled={false}>
         <planeGeometry args={[0.04, 0.04]} />
         <meshBasicMaterial
           color="#ffffff"

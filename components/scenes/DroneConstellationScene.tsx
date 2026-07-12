@@ -144,13 +144,13 @@ function DroneField() {
       <PerspectiveCamera makeDefault position={[0, 0, 18]} fov={60} />
 
       {/* Bright unlit cores */}
-      <instancedMesh ref={meshRef} args={[undefined, undefined, DRONE_COUNT]}>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, DRONE_COUNT]} frustumCulled={false}>
         <sphereGeometry args={[0.08, 16, 16]} />
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </instancedMesh>
 
       {/* Additive halo layer around every drone */}
-      <instancedMesh ref={glowRef} args={[undefined, undefined, DRONE_COUNT]}>
+      <instancedMesh ref={glowRef} args={[undefined, undefined, DRONE_COUNT]} frustumCulled={false}>
         <sphereGeometry args={[0.08, 8, 8]} />
         <meshBasicMaterial
           color="#ffffff"
