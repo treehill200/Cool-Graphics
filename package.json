@@ -1,0 +1,45 @@
+{
+  "name": "cool-graphics",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/treehill200/Cool-Graphics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/treehill200/Cool-Graphics/issues"
+  },
+  "homepage": "https://github.com/treehill200/Cool-Graphics#readme",
+  "dependencies": {
+    "@react-three/drei": "10.7.7",
+    "@react-three/fiber": "9.6.1",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "autoprefixer": "10.5.2",
+    "framer-motion": "12.42.2",
+    "glsl-shader-loader": "0.1.6",
+    "next": "16.2.10",
+    "postcss": "8.5.17",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwindcss": "4.3.2",
+    "three": "0.185.1",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "raw-loader": "^4.0.2",
+    "typescript": "7.0.2"
+  }
+}
