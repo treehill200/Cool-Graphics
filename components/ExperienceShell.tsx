@@ -13,6 +13,8 @@ import GlassObservatoryScene from './scenes/GlassObservatoryScene';
 
 import SceneNavigation from './SceneNavigation';
 import SoundController from './SoundController';
+import AudioBridge from './AudioBridge';
+import NeonCursor from './NeonCursor';
 import SceneTransition from './SceneTransition';
 import PerformanceMonitor from './PerformanceMonitor';
 import HelpPanel from './HelpPanel';
@@ -175,8 +177,12 @@ export default function ExperienceShell() {
       {/* Navigation */}
       <SceneNavigation currentScene={currentScene} onSceneChange={goToScene} />
 
-      {/* Sound Control */}
+      {/* Sound Control + generative ambient audio */}
       <SoundController />
+      <AudioBridge />
+
+      {/* Custom neon cursor */}
+      <NeonCursor />
 
       {/* Fullscreen Toggle */}
       <FullscreenToggle />

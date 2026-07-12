@@ -44,3 +44,9 @@ body {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
+
+/* Hide the native cursor while the neon cursor overlay is active */
+.neon-cursor-active,
+.neon-cursor-active * {
+  cursor: none !important;
+}
