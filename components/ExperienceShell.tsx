@@ -17,6 +17,7 @@ import SceneTransition from './SceneTransition';
 import PerformanceMonitor from './PerformanceMonitor';
 import HelpPanel from './HelpPanel';
 import FullscreenToggle from './FullscreenToggle';
+import SceneInfo from './SceneInfo';
 
 const SCENES = [
   DroneConstellationScene,
@@ -166,6 +167,9 @@ export default function ExperienceShell() {
           <CurrentScene />
         </motion.div>
       </AnimatePresence>
+
+      {/* Scene Information */}
+      <SceneInfo currentScene={currentScene} />
 
       {/* Navigation */}
       <SceneNavigation currentScene={currentScene} onSceneChange={goToScene} />
