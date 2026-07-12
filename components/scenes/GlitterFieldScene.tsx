@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
+import AnimatedHeadline from '@/components/AnimatedHeadline';
 
 const PARTICLE_COUNT = 10000;
 
@@ -191,15 +192,11 @@ export default function GlitterFieldScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1
-          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
-          style={{ textShadow: '0 0 18px rgba(255,113,206,0.9), 0 0 60px rgba(185,103,255,0.6), 0 0 120px rgba(1,205,254,0.4)' }}
-        >
-          TOUCH THE UNTOUCHABLE
-        </h1>
-        <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">
-          A surface made from a million moments of reflected light.
-        </p>
+        <AnimatedHeadline
+          text="TOUCH THE UNTOUCHABLE"
+          subtitle="A surface made from a million moments of reflected light."
+          accent="#ff71ce"
+        />
       </div>
     </div>
   );

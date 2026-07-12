@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
+import AnimatedHeadline from '@/components/AnimatedHeadline';
 
 const DRONE_COUNT = 200;
 
@@ -248,15 +249,11 @@ export default function DroneConstellationScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1
-          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
-          style={{ textShadow: '0 0 18px rgba(0,255,255,0.9), 0 0 60px rgba(0,255,255,0.5), 0 0 120px rgba(255,0,255,0.4)' }}
-        >
-          THE SKY REMEMBERS
-        </h1>
-        <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">
-          Every point of light has a position. Every movement has a purpose.
-        </p>
+        <AnimatedHeadline
+          text="THE SKY REMEMBERS"
+          subtitle="Every point of light has a position. Every movement has a purpose."
+          accent="#00ffff"
+        />
       </div>
 
       {/* Scroll hint */}

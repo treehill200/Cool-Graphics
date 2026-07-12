@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 import { usePointerImpulse } from '@/hooks/usePointerImpulse';
 import SceneCanvas from '@/components/SceneCanvas';
+import AnimatedHeadline from '@/components/AnimatedHeadline';
 
 function FerrofluidMesh() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
@@ -164,15 +165,11 @@ export default function FerrofluidScene() {
 
       {/* Text Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <h1
-          className="text-5xl md:text-6xl font-light text-white tracking-widest text-center"
-          style={{ textShadow: '0 0 18px rgba(125,47,255,0.95), 0 0 60px rgba(0,234,255,0.55), 0 0 120px rgba(255,0,255,0.45)' }}
-        >
-          INVISIBLE FORCES
-        </h1>
-        <p className="text-sm md:text-base text-white/60 mt-8 tracking-wide max-w-md text-center">
-          You cannot see what moves it. You can only see what it becomes.
-        </p>
+        <AnimatedHeadline
+          text="INVISIBLE FORCES"
+          subtitle="You cannot see what moves it. You can only see what it becomes."
+          accent="#7d2fff"
+        />
       </div>
     </div>
   );
