@@ -13,6 +13,7 @@ import GlassObservatoryScene from './scenes/GlassObservatoryScene';
 
 import SceneNavigation from './SceneNavigation';
 import SoundController from './SoundController';
+import SceneTransition from './SceneTransition';
 
 const SCENES = [
   DroneConstellationScene,
@@ -34,6 +35,8 @@ export default function ExperienceShell() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
   const [touchStartY, setTouchStartY] = useState(0);
+  const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
+  const prevSceneRef = useRef(currentScene);
 
   // Detect mobile
   useEffect(() => {
@@ -60,8 +63,12 @@ export default function ExperienceShell() {
   const goToScene = useCallback((sceneIndex: SceneIndex) => {
     if (sceneIndex === currentScene || sceneIndex < 0 || sceneIndex > 4) return;
 
+    const direction = sceneIndex > currentScene ? 'forward' : 'backward';
+    setTransitionDirection(direction);
     setIsTransitioning(true);
+
     setTimeout(() => {
+      prevSceneRef.current = sceneIndex;
       setCurrentScene(sceneIndex);
       setIsTransitioning(false);
     }, 600);
@@ -162,6 +169,9 @@ export default function ExperienceShell() {
 
       {/* Sound Control */}
       <SoundController />
+
+      {/* Transition Effect */}
+      <SceneTransition isActive={isTransitioning} direction={transitionDirection} />
 
       {/* Skip to main navigation message for screen readers */}
       <a href="#main-content" className="sr-only">

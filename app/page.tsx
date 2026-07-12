@@ -1,6 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import LoadingScreen from '@/components/LoadingScreen';
 
 const ExperienceShell = dynamic(() => import('@/components/ExperienceShell'), {
   ssr: false,
@@ -8,5 +11,15 @@ const ExperienceShell = dynamic(() => import('@/components/ExperienceShell'), {
 });
 
 export default function Home() {
-  return <ExperienceShell />;
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  return (
+    <AnimatePresence mode="wait">
+      {!isLoaded ? (
+        <LoadingScreen key="loading" onComplete={() => setIsLoaded(true)} />
+      ) : (
+        <ExperienceShell key="experience" />
+      )}
+    </AnimatePresence>
+  );
 }
