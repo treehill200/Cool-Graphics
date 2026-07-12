@@ -59,15 +59,6 @@ export default function SceneInfo({ currentScene }: SceneInfoProps) {
           CHAPTER {config.chapter} • {config.name.toUpperCase()}
         </motion.div>
 
-        <motion.h2
-          className="text-2xl md:text-3xl font-light text-white tracking-widest mb-2"
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {config.headline}
-        </motion.h2>
-
         <motion.div
           className="hidden md:flex justify-center gap-6 text-xs text-white/40 mt-4"
           initial={{ opacity: 0 }}

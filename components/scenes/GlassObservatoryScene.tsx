@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
@@ -145,7 +146,7 @@ function GlassArchitecture() {
 
   return (
     <>
-      <perspectiveCamera makeDefault position={[0, 8, 25]} fov={45} />
+      <PerspectiveCamera makeDefault position={[0, 8, 25]} fov={45} />
       <ambientLight intensity={0.3} />
       <pointLight position={[18, 18, 18]} intensity={0.7} color="#ffffff" />
       <pointLight position={[-15, 12, -15]} intensity={0.5} color="#00ffdd" />

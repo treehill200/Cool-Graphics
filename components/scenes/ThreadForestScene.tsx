@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
@@ -14,7 +15,7 @@ interface Thread {
   color: THREE.Color;
   id: number;
   geometry: THREE.BufferGeometry;
-  line: THREE.LineSegments;
+  line: THREE.Line;
 }
 
 function ThreadForest() {
@@ -87,7 +88,7 @@ function ThreadForest() {
         linewidth: 2,
       });
 
-      const line = new THREE.LineSegments(geometry, material);
+      const line = new THREE.Line(geometry, material);
       containerRef.current.add(line);
 
       threads.push({
@@ -157,7 +158,7 @@ function ThreadForest() {
 
   return (
     <>
-      <perspectiveCamera makeDefault position={[0, 4, 18]} />
+      <PerspectiveCamera makeDefault position={[0, 4, 18]} />
       <ambientLight intensity={0.3} />
       <pointLight position={[0, 10, 15]} intensity={0.8} color="#00d9ff" />
       <pointLight position={[-10, 5, -10]} intensity={0.4} color="#6600ff" />

@@ -47,7 +47,7 @@ export default function FullscreenToggle() {
           setIsFullscreen(false);
         }
       }}
-      className="fixed top-8 right-24 z-40 p-2 text-white/50 hover:text-white transition-colors"
+      className="fixed top-8 left-20 z-40 p-2 text-white/50 hover:text-white transition-colors"
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       title="Press F for fullscreen"

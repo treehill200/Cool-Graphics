@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
@@ -86,7 +87,7 @@ function FerrofluidMesh() {
 
   return (
     <>
-      <perspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
+      <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
       <pointLight position={[12, 12, 12]} intensity={0.5} />
       <pointLight position={[-10, -10, 8]} intensity={0.3} color="#0055ff" />
       <ambientLight intensity={0.15} />

@@ -31,13 +31,14 @@ export default function ExperienceShell() {
   const {
     currentScene,
     setCurrentScene,
+    isTransitioning,
     setIsTransitioning,
     setIsMobile,
     reducedMotion,
   } = useStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [touchStartY, setTouchStartY] = useState(0);
   const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const prevSceneRef = useRef(currentScene);

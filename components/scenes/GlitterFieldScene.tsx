@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
 
@@ -44,7 +45,8 @@ function GlitterField() {
   useFrame(() => {
     timeRef.current += 0.016;
 
-    if (!meshRef.current) return;
+    const mesh = meshRef.current;
+    if (!mesh) return;
 
     const temp = new THREE.Object3D();
     const cursorNorm = new THREE.Vector3(
@@ -91,15 +93,15 @@ function GlitterField() {
       temp.rotation.z = Math.atan2(particle.velocity.y, particle.velocity.x) + timeRef.current;
 
       temp.updateMatrix();
-      meshRef.current.setMatrixAt(index, temp.matrix);
+      mesh.setMatrixAt(index, temp.matrix);
     });
 
-    meshRef.current.instanceMatrix.needsUpdate = true;
+    mesh.instanceMatrix.needsUpdate = true;
   });
 
   return (
     <>
-      <perspectiveCamera makeDefault position={[0, 0, 15]} fov={55} />
+      <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={55} />
       <pointLight position={[8, 8, 12]} intensity={0.8} color="#ffffff" />
       <pointLight position={[-8, -8, 10]} intensity={0.5} color="#ff88dd" />
       <ambientLight intensity={0.15} />
