@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import SceneCanvas from '@/components/SceneCanvas';
 
 const DRONE_COUNT = 200;
 
@@ -127,12 +128,9 @@ export default function DroneConstellationScene() {
   return (
     <div className="w-full h-full bg-black relative" role="region" aria-label="Drone Constellation Scene">
       {mounted && (
-        <Canvas
-          dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-        >
+        <SceneCanvas>
           <DroneField />
-        </Canvas>
+        </SceneCanvas>
       )}
 
       {/* Text Overlay */}

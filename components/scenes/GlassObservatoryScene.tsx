@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import SceneCanvas from '@/components/SceneCanvas';
 
 interface ArchElement {
   mesh: THREE.Mesh;
@@ -169,12 +170,9 @@ export default function GlassObservatoryScene() {
   return (
     <div className="w-full h-full bg-black relative" role="region" aria-label="Glass Observatory Scene">
       {mounted && (
-        <Canvas
-          dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-        >
+        <SceneCanvas>
           <GlassArchitecture />
-        </Canvas>
+        </SceneCanvas>
       )}
 
       {/* Text Overlay */}

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '@/hooks/useCursorPosition';
+import SceneCanvas from '@/components/SceneCanvas';
 
 function FerrofluidMesh() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
@@ -119,12 +120,9 @@ export default function FerrofluidScene() {
   return (
     <div className="w-full h-full bg-black relative" role="region" aria-label="Magnetic Ferrofluid Scene">
       {mounted && (
-        <Canvas
-          dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-        >
+        <SceneCanvas>
           <FerrofluidMesh />
-        </Canvas>
+        </SceneCanvas>
       )}
 
       {/* Text Overlay */}
