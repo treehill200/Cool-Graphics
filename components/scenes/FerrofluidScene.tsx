@@ -28,11 +28,12 @@ function FerrofluidMesh() {
 
     timeRef.current += 0.016;
 
-    // Cursor parallax
+    // Cursor parallax plus idle drift
+    const drift = state.clock.elapsedTime;
     const nx = cursorPos.x / window.innerWidth - 0.5;
     const ny = cursorPos.y / window.innerHeight - 0.5;
-    state.camera.position.x += (nx * 2.5 - state.camera.position.x) * 0.03;
-    state.camera.position.y += (-ny * 2.5 - state.camera.position.y) * 0.03;
+    state.camera.position.x += (nx * 2.5 + Math.sin(drift * 0.08) * 1.2 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 2.5 + Math.cos(drift * 0.11) * 0.9 - state.camera.position.y) * 0.03;
     state.camera.lookAt(0, 0, 0);
 
     const positionAttribute = geometry.getAttribute('position');

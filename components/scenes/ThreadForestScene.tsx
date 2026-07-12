@@ -60,6 +60,8 @@ function ThreadForest() {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Fewer strands on small screens to hold 60fps
+    const threadCount = window.innerWidth < 768 ? 120 : THREAD_COUNT;
     const threads: Thread[] = [];
 
     const colors = [
@@ -71,7 +73,7 @@ function ThreadForest() {
       0x8844ff,
     ];
 
-    for (let t = 0; t < THREAD_COUNT; t++) {
+    for (let t = 0; t < threadCount; t++) {
       const baseX = (Math.random() - 0.5) * 35;
       const baseZ = (Math.random() - 0.5) * 35;
       const baseY = -10;
@@ -153,11 +155,12 @@ function ThreadForest() {
       0
     );
 
-    // Cursor parallax
+    // Cursor parallax plus idle drift
+    const drift = state.clock.elapsedTime;
     const nx = cursorPos.x / window.innerWidth - 0.5;
     const ny = cursorPos.y / window.innerHeight - 0.5;
-    state.camera.position.x += (nx * 3 - state.camera.position.x) * 0.03;
-    state.camera.position.y += (4 - ny * 2 - state.camera.position.y) * 0.03;
+    state.camera.position.x += (nx * 3 + Math.sin(drift * 0.07) * 1.6 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (4 - ny * 2 + Math.cos(drift * 0.1) * 0.7 - state.camera.position.y) * 0.03;
     state.camera.lookAt(0, 2, 0);
 
     // Click pulse: an expanding ring of displacement travels through the forest

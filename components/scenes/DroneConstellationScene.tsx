@@ -17,6 +17,53 @@ interface Drone {
   id: number;
 }
 
+// The swarm cycles through these formations, morphing between them
+type FormationFn = (i: number, n: number, t: number, out: THREE.Vector3) => void;
+
+const FORMATIONS: FormationFn[] = [
+  // Orbiting nebula helix
+  (i, n, t, out) => {
+    const phase = t * 0.06 + (i / n) * Math.PI * 2;
+    const radius = 8 + Math.sin(t * 0.03) * 3;
+    out.set(
+      Math.cos(phase) * radius + Math.sin(phase * 0.3),
+      Math.sin(phase * 0.5) * 5 + Math.cos(phase * 0.2),
+      Math.sin(phase * 1.5) * radius + Math.cos(phase * 0.4)
+    );
+  },
+  // Fibonacci sphere, slowly rotating
+  (i, n, t, out) => {
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = golden * i + t * 0.15;
+    out.set(Math.cos(theta) * r * 9, y * 9, Math.sin(theta) * r * 9);
+  },
+  // Great torus ring
+  (i, n, t, out) => {
+    const u = (i / n) * Math.PI * 16 + t * 0.12;
+    const v = (i / n) * Math.PI * 2 + t * 0.05;
+    out.set(
+      (9 + 2.5 * Math.cos(u)) * Math.cos(v),
+      2.5 * Math.sin(u),
+      (9 + 2.5 * Math.cos(u)) * Math.sin(v)
+    );
+  },
+  // Rippling wave grid
+  (i, n, t, out) => {
+    const cols = 20;
+    const x = (i % cols) - cols / 2 + 0.5;
+    const z = Math.floor(i / cols) - n / cols / 2 + 0.5;
+    out.set(
+      x * 1.1,
+      Math.sin(x * 0.5 + t * 0.6) * 2.2 + Math.cos(z * 0.6 + t * 0.45) * 2.2,
+      z * 1.6
+    );
+  },
+];
+
+const FORMATION_CYCLE_SECONDS = 11;
+
 function DroneField() {
   const { position: cursorPos, isMouseOver } = useCursorPosition();
   const { impulseRef } = usePointerImpulse();
@@ -65,11 +112,12 @@ function DroneField() {
       0
     );
 
-    // Cursor parallax: the camera drifts with the mouse for depth
+    // Cursor parallax plus a slow idle drift so the scene breathes untouched
+    const drift = state.clock.elapsedTime;
     const nx = cursorPos.x / window.innerWidth - 0.5;
     const ny = cursorPos.y / window.innerHeight - 0.5;
-    state.camera.position.x += (nx * 3 - state.camera.position.x) * 0.03;
-    state.camera.position.y += (-ny * 3 - state.camera.position.y) * 0.03;
+    state.camera.position.x += (nx * 3 + Math.sin(drift * 0.12) * 1.4 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 3 + Math.cos(drift * 0.09) * 1.0 - state.camera.position.y) * 0.03;
     state.camera.lookAt(0, 0, 0);
 
     // Click: scatter burst — the swarm explodes outward, then reforms
@@ -90,16 +138,27 @@ function DroneField() {
 
     const positions: number[] = [];
 
+    // Morph between formations: hold each one, then blend into the next
+    const t = state.clock.elapsedTime;
+    const cyclePos = t / FORMATION_CYCLE_SECONDS;
+    const fromIdx = Math.floor(cyclePos) % FORMATIONS.length;
+    const toIdx = (fromIdx + 1) % FORMATIONS.length;
+    const frac = cyclePos % 1;
+    const rawBlend = Math.min(Math.max((frac - 0.65) / 0.35, 0), 1);
+    const blend = rawBlend * rawBlend * (3 - 2 * rawBlend); // smoothstep
+
+    const fromTarget = new THREE.Vector3();
+    const toTarget = new THREE.Vector3();
+
     drones.forEach((drone, index) => {
       const phase = formationPhaseRef.current + (index / DRONE_COUNT) * Math.PI * 2;
-      const angle = phase;
-      const radius = 8 + Math.sin(formationPhaseRef.current * 0.5) * 3;
 
-      drone.targetPosition.set(
-        Math.cos(angle) * radius + Math.sin(phase * 0.3) * 1,
-        Math.sin(angle * 0.5) * 5 + Math.cos(phase * 0.2) * 1,
-        Math.sin(angle * 1.5) * radius + Math.cos(phase * 0.4) * 1
-      );
+      FORMATIONS[fromIdx](index, DRONE_COUNT, t, fromTarget);
+      if (blend > 0) {
+        FORMATIONS[toIdx](index, DRONE_COUNT, t, toTarget);
+        fromTarget.lerp(toTarget, blend);
+      }
+      drone.targetPosition.copy(fromTarget);
 
       if (isMouseOver) {
         const distToCursor = drone.position.distanceTo(cursorVector);
@@ -114,7 +173,7 @@ function DroneField() {
 
       drone.velocity.lerpVectors(
         drone.velocity,
-        new THREE.Vector3().subVectors(drone.targetPosition, drone.position).multiplyScalar(0.008),
+        new THREE.Vector3().subVectors(drone.targetPosition, drone.position).multiplyScalar(0.014),
         0.08
       );
 

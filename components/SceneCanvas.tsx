@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
+import Bloom from './Bloom';
 
 function detectWebGL(): boolean {
   try {
@@ -70,6 +71,7 @@ export default function SceneCanvas({ children }: { children: React.ReactNode })
         }}
       >
         {children}
+        <Bloom />
       </Canvas>
     </CanvasErrorBoundary>
   );

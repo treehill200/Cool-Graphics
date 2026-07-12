@@ -26,9 +26,14 @@ function GlitterField() {
   const particlesRef = useRef<Particle[]>([]);
   const timeRef = useRef(0);
 
+  // Fewer particles on small screens to hold 60fps
+  const [particleCount] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 3500 : PARTICLE_COUNT
+  );
+
   // Initialize particles
   useEffect(() => {
-    particlesRef.current = Array.from({ length: PARTICLE_COUNT }, (_, i) => {
+    particlesRef.current = Array.from({ length: particleCount }, (_, i) => {
       const baseTarget = new THREE.Vector3(
         (Math.random() - 0.5) * 24,
         (Math.random() - 0.5) * 24,
@@ -48,13 +53,13 @@ function GlitterField() {
     const palette = ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff', '#fffb96', '#00ffff'];
     const c = new THREE.Color();
     if (meshRef.current) {
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
+      for (let i = 0; i < particleCount; i++) {
         c.set(palette[i % palette.length]);
         meshRef.current.setColorAt(i, c);
       }
       if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
     }
-  }, []);
+  }, [particleCount]);
 
   useFrame((state) => {
     timeRef.current += 0.016;
@@ -69,11 +74,12 @@ function GlitterField() {
       0
     );
 
-    // Cursor parallax
+    // Cursor parallax plus idle drift
+    const drift = state.clock.elapsedTime;
     const nx = cursorPos.x / window.innerWidth - 0.5;
     const ny = cursorPos.y / window.innerHeight - 0.5;
-    state.camera.position.x += (nx * 2 - state.camera.position.x) * 0.03;
-    state.camera.position.y += (-ny * 2 - state.camera.position.y) * 0.03;
+    state.camera.position.x += (nx * 2 + Math.sin(drift * 0.1) * 1.1 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (-ny * 2 + Math.cos(drift * 0.13) * 0.8 - state.camera.position.y) * 0.03;
     state.camera.lookAt(0, 0, 0);
 
     // Click: glitter shockwave radiating from the click point
@@ -147,7 +153,7 @@ function GlitterField() {
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={55} />
 
-      <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]} frustumCulled={false}>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, particleCount]} frustumCulled={false}>
         <planeGeometry args={[0.04, 0.04]} />
         <meshBasicMaterial
           color="#ffffff"

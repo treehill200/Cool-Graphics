@@ -124,11 +124,12 @@ function GlassArchitecture() {
 
     timeRef.current += 0.016;
 
-    // Cursor parallax
+    // Cursor parallax plus idle drift
+    const drift = state.clock.elapsedTime;
     const nx = cursorPos.x / window.innerWidth - 0.5;
     const ny = cursorPos.y / window.innerHeight - 0.5;
-    state.camera.position.x += (nx * 4 - state.camera.position.x) * 0.03;
-    state.camera.position.y += (8 - ny * 3 - state.camera.position.y) * 0.03;
+    state.camera.position.x += (nx * 4 + Math.sin(drift * 0.06) * 2.2 - state.camera.position.x) * 0.03;
+    state.camera.position.y += (8 - ny * 3 + Math.cos(drift * 0.08) * 1.3 - state.camera.position.y) * 0.03;
     state.camera.lookAt(0, 0, 0);
 
     // Click: kick the whole observatory into a spin and flare the core
